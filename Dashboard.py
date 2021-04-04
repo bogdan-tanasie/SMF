@@ -80,11 +80,11 @@ def filter_data(df, t, d, covid_date):
 @st.cache(persist=True)
 def load_network_results(filter_str):
     if 'post' in filter_str:
-        return pd.read_csv(r'./data/postcov_aggregated_uber_results.csv')
+        return pd.read_csv(r'./data/post_network_results.csv')
     elif 'pre' in filter_str:
-        return pd.read_csv(r'./data/precov_aggregated_uber_results.csv')
+        return pd.read_csv(r'./data/pre_network_results.csv')
     else:
-        return pd.read_csv(r'./data/all_aggregated_uber_results.csv')
+        return pd.read_csv(r'./data/all_network_results.csv')
 
 
 date = np.datetime64('2020-04-01T01:00:00.000000+0100')
@@ -93,12 +93,29 @@ uber_df_f, filter_type = filter_data(uber_df.copy(), timeline, direction, date)
 network_results = load_network_results(filter_type)
 #######################################################################################################
 
-# Network Analysis
+# COMBINED ANALYSIS
+#######################################################################################################
+st.header('Uber Support Priority Queue')
+
+#######################################################################################################
+
+# NETWORK ANALYSIS
 #######################################################################################################
 st.subheader('Network Analysis')
 st.write(network_results.head(50))
+if 'post' in filter_type:
+    st.image('./images/post_graph.png')
+elif 'pre' in filter_type:
+    st.image('./images/pre_graph.png')
+else:
+    st.image('./images/all_graph.png')
 #######################################################################################################
 
+# SENTIMENT ANALYSIS
+#######################################################################################################
+st.header('Sentiment Analysis')
+
+#######################################################################################################
 
 # TOPIC MODELING
 #######################################################################################################
