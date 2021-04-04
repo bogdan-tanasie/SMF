@@ -18,11 +18,14 @@ st.sidebar.markdown('**By:** Anukriti, Siddharth, Richard, Bogdan')
 st.sidebar.markdown('**McGill MMA** - Social Media Analytics')
 st.sidebar.markdown('**GitHub:** https://github.com/bogdan-tanasie/SMF')
 
-st.sidebar.subheader('Options')
+st.sidebar.header('Controls')
+st.sidebar.subheader('All Models')
 timeline = st.sidebar.selectbox(
     "Select timeframe for analysis",
     ("All", "Pre-COVID", "Post-COVID")
 )
+
+st.sidebar.subheader('Topic & Sentiment Models')
 direction = st.sidebar.selectbox(
     "Select data direction",
     ("All", "To Uber", "From Uber")
@@ -51,10 +54,12 @@ def filter_data(df, t, d, covid_date):
     filter_str = 'all'
     if t == 'All' and d == 'To Uber':
         filter_str = 'to'
-        return df[df['target'] == 'Uber_Support'], filter_str
+        return (df[((df['target'] == 'Uber_Support') | (df['target'] == 'UberVirgDetroit') | (df['target'] == 'Uber_India') | (df['target'] == 'UberEats') | (df['target'] == 'Uber_Kolkata') | (df['target'] == 'Uber') | (df['target'] == 'UberUKsupport') | (df['target'] == 'Uber_MEX') | (df['target'] == 'Uber_RSA') | (df['target'] == 'UberINSupport'))]
+                , filter_str)
     elif t == 'All' and d == 'From Uber':
         filter_str = 'from'
-        return df[df['source'] == 'Uber_Support'], filter_str
+        return (df[((df['source'] == 'Uber_Support') | (df['source'] == 'UberVirgDetroit') | (df['source'] == 'Uber_India') | (df['source'] == 'UberEats') | (df['source'] == 'Uber_Kolkata') | (df['source'] == 'Uber') | (df['source'] == 'UberUKsupport') | (df['source'] == 'Uber_MEX') | (df['source'] == 'Uber_RSA') | (df['source'] == 'UberINSupport'))]
+                , filter_str)
     elif t == 'Pre-COVID' and d == 'All':
         filter_str = 'pre'
         return df[df['created_at'] <= covid_date], filter_str
@@ -63,16 +68,24 @@ def filter_data(df, t, d, covid_date):
         return df[df['created_at'] > covid_date], filter_str
     elif t == 'Pre-COVID' and d == 'To Uber':
         filter_str = 'pre_to'
-        return df[(df['target'] == 'Uber_Support') & (df['created_at'] <= covid_date)], filter_str
+        return (df[((df['target'] == 'Uber_Support') | (df['target'] == 'UberVirgDetroit') | (df['target'] == 'Uber_India') | (df['target'] == 'UberEats') | (df['target'] == 'Uber_Kolkata') | (df['target'] == 'Uber') | (df['target'] == 'UberUKsupport') | (df['target'] == 'Uber_MEX') | (df['target'] == 'Uber_RSA') | (df['target'] == 'UberINSupport'))
+                   & (df['created_at'] <= covid_date)]
+                , filter_str)
     elif t == 'Pre-COVID' and d == 'To Uber':
         filter_str = 'pre_from'
-        return df[(df['source'] == 'Uber_Support') & (df['created_at'] <= covid_date)], filter_str
+        return (df[((df['source'] == 'Uber_Support') | (df['source'] == 'UberVirgDetroit') | (df['source'] == 'Uber_India') | (df['source'] == 'UberEats') | (df['source'] == 'Uber_Kolkata') | (df['source'] == 'Uber') | (df['source'] == 'UberUKsupport') | (df['source'] == 'Uber_MEX') | (df['source'] == 'Uber_RSA') | (df['source'] == 'UberINSupport'))
+                   & (df['created_at'] <= covid_date)]
+                , filter_str)
     elif t == 'Post-COVID' and d == 'To Uber':
         filter_str = 'post_to'
-        return df[(df['target'] == 'Uber_Support') & (df['created_at'] > covid_date)], filter_str
+        return (df[((df['target'] == 'Uber_Support') | (df['target'] == 'UberVirgDetroit') | (df['target'] == 'Uber_India') | (df['target'] == 'UberEats') | (df['target'] == 'Uber_Kolkata') | (df['target'] == 'Uber') | (df['target'] == 'UberUKsupport') | (df['target'] == 'Uber_MEX') | (df['target'] == 'Uber_RSA') | (df['target'] == 'UberINSupport'))
+                   & (df['created_at'] > covid_date)]
+                , filter_str)
     elif t == 'Post-COVID' and d == 'From Uber':
         filter_str = 'post_from'
-        return df[(df['source'] == 'Uber_Support') & (df['created_at'] > covid_date)], filter_str
+        return (df[((df['source'] == 'Uber_Support') | (df['source'] == 'UberVirgDetroit') | (df['source'] == 'Uber_India') | (df['source'] == 'UberEats') | (df['source'] == 'Uber_Kolkata') | (df['source'] == 'Uber') | (df['source'] == 'UberUKsupport') | (df['source'] == 'Uber_MEX') | (df['source'] == 'Uber_RSA') | (df['source'] == 'UberINSupport'))
+                   & (df['created_at'] > covid_date)]
+                , filter_str)
     else:
         return df, filter_str
 
@@ -96,12 +109,21 @@ network_results = load_network_results(filter_type)
 # COMBINED ANALYSIS
 #######################################################################################################
 st.header('Uber Support Priority Queue')
-
+st.write('Here we combine sentiment and network models to prioritize posts based off priority.')
+st.write('Ideally be able to filter by time')
+created_at = st.selectbox(
+    "Created At",
+    (uber_df['created_at'])
+)
+score_type = st.selectbox(
+    "Select score type (mean favors sentiment & sum favors network)",
+    ("Mean", "Sum")
+)
 #######################################################################################################
 
 # NETWORK ANALYSIS
 #######################################################################################################
-st.subheader('Network Analysis')
+st.header('Network Analysis')
 st.write(network_results.head(50))
 if 'post' in filter_type:
     st.image('./images/post_graph.png')
@@ -114,12 +136,13 @@ else:
 # SENTIMENT ANALYSIS
 #######################################################################################################
 st.header('Sentiment Analysis')
+st.write('Sentiment analysis based off categories and interactions.')
 
 #######################################################################################################
 
 # TOPIC MODELING
 #######################################################################################################
-st.subheader('Topic Modeling Analysis')
+st.header('Topic Modeling Analysis')
 wc_image = word_cloud(uber_df_f)
 st.image(wc_image, width=1000)
 
