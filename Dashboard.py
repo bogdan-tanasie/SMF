@@ -12,7 +12,7 @@ st.title('Twitter Complaints Analysis')
 
 # SIDEBAR
 #######################################################################################################
-st.sidebar.image('./images/mcgill_logo.png')
+st.sidebar.image('./images/uber_logo.png')
 
 st.sidebar.markdown('**By:** Anukriti, Siddharth, Richard, Bogdan')
 st.sidebar.markdown('**McGill MMA** - Social Media Analytics')
@@ -106,11 +106,11 @@ st.subheader('Topic Modeling Analysis')
 wc_image = word_cloud(uber_df_f)
 st.image(wc_image, width=1000)
 
-try:
-    lda(uber_df_f, n_topics, filter_type)
-except IOError as e:
-    if e.errno == errno.EPIPE:
-        print('Waiting on LDA')
+# try:
+#  lda(uber_df_f, n_topics, filter_type)
+# except IOError as e:
+#    if e.errno == errno.EPIPE:
+#        print('Waiting on LDA')
 
 HtmlFile = None
 if os_type == 'Windows':
