@@ -7,6 +7,7 @@ import errno
 import platform
 from Helpers import word_cloud, lda
 
+st.set_page_config(layout="wide")
 st.title('Twitter Complaints Analysis')
 
 # SIDEBAR
@@ -76,9 +77,26 @@ def filter_data(df, t, d, covid_date):
         return df, filter_str
 
 
+@st.cache(persist=True)
+def load_network_results(filter_str):
+    if 'post' in filter_str:
+        return pd.read_csv(r'./data/postcov_aggregated_uber_results.csv')
+    elif 'pre' in filter_str:
+        return pd.read_csv(r'./data/precov_aggregated_uber_results.csv')
+    else:
+        return pd.read_csv(r'./data/all_aggregated_uber_results.csv')
+
+
 date = np.datetime64('2020-04-01T01:00:00.000000+0100')
 uber_df = load_data()
-uber_df_f, lda_str = filter_data(uber_df.copy(), timeline, direction, date)
+uber_df_f, filter_type = filter_data(uber_df.copy(), timeline, direction, date)
+network_results = load_network_results(filter_type)
+#######################################################################################################
+
+# Network Analysis
+#######################################################################################################
+st.subheader('Network Analysis')
+st.write(network_results.head(50))
 #######################################################################################################
 
 
@@ -86,20 +104,19 @@ uber_df_f, lda_str = filter_data(uber_df.copy(), timeline, direction, date)
 #######################################################################################################
 st.subheader('Topic Modeling Analysis')
 wc_image = word_cloud(uber_df_f)
-st.image(wc_image, width=1200)
+st.image(wc_image, width=1000)
 
 try:
-    lda(uber_df_f, n_topics, lda_str)
+    lda(uber_df_f, n_topics, filter_type)
 except IOError as e:
     if e.errno == errno.EPIPE:
         print('Waiting on LDA')
 
 HtmlFile = None
 if os_type == 'Windows':
-    HtmlFile = open(cwd + r"\html\{}_lda_n{}.html".format(lda_str, n_topics), encoding='utf-8')
+    HtmlFile = open(cwd + r"\html\{}_lda_n{}.html".format(filter_type, n_topics), encoding='utf-8')
 else:
-    HtmlFile = open(cwd + "/html/{}_lda_n{}.html".format(lda_str, n_topics), encoding='utf-8')
+    HtmlFile = open(cwd + "/html/{}_lda_n{}.html".format(filter_type, n_topics), encoding='utf-8')
 source_code = HtmlFile.read()
-components.html(source_code, width=1200, height=800)
+components.html(source_code, width=1000, height=800)
 #######################################################################################################
-
