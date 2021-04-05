@@ -2,7 +2,7 @@ import warnings
 warnings.filterwarnings("ignore")
 import pickle as pk
 import pandas as pd
-import wordcloud as wc
+from wordcloud import  WordCloud
 import gensim as gs
 import gensim.corpora as cp
 # import pyLDAvis.gensim
@@ -10,11 +10,13 @@ import pyLDAvis
 from pyLDAvis import gensim_models
 import numpy as np
 import  matplotlib.pyplot as plt
+import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from pprint import pprint
 from IPython import display
 from datetime import datetime
 
+nltk.download('vader_lexicon')
 
 # TOPIC MODELING
 #######################################################################################################
@@ -25,7 +27,7 @@ def word_cloud(df):
 
     print('Total words {}'.format(len(all_words)))
 
-    wordcloud = wc.WordCloud(background_color="white", max_words=100000, contour_width=6, scale=10,
+    wordcloud = WordCloud(background_color="white", max_words=100000, contour_width=6, scale=10,
                              contour_color='steelblue')
     wordcloud.generate(all_words)
     return wordcloud.to_image()

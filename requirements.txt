@@ -1,0 +1,15 @@
+pandas==1.2.3
+numpy==1.20.2
+wordcloud==1.2.1
+nltk==3.5
+gensim==4.0.1
+requests==2.25.1
+matplotlib==3.4.1
+streamlit==0.79.0
+beautifulsoup4==4.9.3
+ipython==7.22.0
+pyLDAvis==3.3.1
+scikit_learn==0.24.1
+selenium==3.141.0
+SQLAlchemy==1.4.5
+webdriver_manager==3.3.0
