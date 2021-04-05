@@ -144,7 +144,7 @@ st.write('Sentiment analysis based off categories and interactions.')
 #######################################################################################################
 st.header('Topic Modeling Analysis')
 wc_image = word_cloud(uber_df_f)
-st.image(wc_image, width=1000)
+st.image(wc_image, width=1200)
 
 # try:
 #  lda(uber_df_f, n_topics, filter_type)
@@ -158,5 +158,5 @@ if os_type == 'Windows':
 else:
     HtmlFile = open(cwd + "/html/{}_lda_n{}.html".format(filter_type, n_topics), encoding='utf-8')
 source_code = HtmlFile.read()
-components.html(source_code, width=1000, height=800)
+components.html(source_code, width=1200, height=800)
 #######################################################################################################
