@@ -6,6 +6,7 @@ import os
 import errno
 import platform
 from Helpers import word_cloud, lda, get_sentiment
+from sklearn.preprocessing import MaxAbsScaler
 
 st.set_page_config(layout="wide")
 st.title('Twitter Complaints Analysis')
@@ -158,14 +159,23 @@ score_type = st.selectbox(
 sentiment_df = calculate_sentiment(text_df)
 
 combined_df = sentiment_df.merge(network_results, on='user')
+scaler = MaxAbsScaler()
 if score_type == 'Mean':
-    combined_df['combined_score'] = combined_df['mean_score'] + -1*combined_df['sentiment_score']
+    scores = [combined_df['mean_score'], -1*combined_df['sentiment_score']]
+    scores_std = scaler.fit_transform(scores)
+    combined_df['combined_score'] = (scores_std[0] + scores[1])/2
+    combined_df['mean_score_std'] = scores_std[0]
+    combined_df['sentiment_score_std'] = scores_std[1]
     combined_df.sort_values('combined_score', ascending=False, inplace=True)
-    st.write(combined_df[['user', 'target', 'combined_score', 'mean_score', 'sentiment_score', 'text', 'created_at']])
+    st.write(combined_df[['user', 'target', 'combined_score', 'mean_score_std', 'sentiment_score_std', 'mean_score', 'sentiment_score', 'text', 'created_at']])
 if score_type == 'Sum':
-    combined_df['combined_score'] = combined_df['sum_score'] + -1*combined_df['sentiment_score']
+    scores = [combined_df['sum_score'], -1 * combined_df['sentiment_score']]
+    scores_std = scaler.fit_transform(scores)
+    combined_df['combined_score'] = scores_std[0] + scores[1]
+    combined_df['sum_score_std'] = scores_std[0]
+    combined_df['sentiment_score_std'] = scores_std[1]
     combined_df.sort_values('combined_score', ascending=False, inplace=True)
-    st.write(combined_df[['user', 'target', 'combined_score', 'sum_score', 'sentiment_score', 'text', 'created_at']])
+    st.write(combined_df[['user', 'target', 'combined_score', 'sum_score_std', 'sentiment_score_std', 'sum_score', 'sentiment_score', 'text', 'created_at']])
 
 #######################################################################################################
 
