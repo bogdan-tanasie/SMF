@@ -189,7 +189,7 @@ st.write(sentiment_df)
 st.subheader('Sentiment Based On Complaints Categories')
 st.write(complaints_sentiment)
 
-st.subheader('Sentiment Based On Response Time')
+st.subheader('Negative Sentiment Based On Conversation Length')
 st.image('./images/senti_by_response_time.png')
 #######################################################################################################
 
