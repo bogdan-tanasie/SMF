@@ -5,7 +5,7 @@ import numpy as np
 import os
 import errno
 import platform
-from Helpers import word_cloud, lda
+from Helpers import word_cloud, lda, get_sentiment
 
 st.set_page_config(layout="wide")
 st.title('Twitter Complaints Analysis')
@@ -99,18 +99,53 @@ def load_network_results(filter_str):
     else:
         return pd.read_csv(r'./data/all_network_results.csv')
 
+@st.cache(persist=True)
+def load_sentiment_results(filter_str, covid_date):
+    complaints_sentiment_df = pd.read_csv(r'./data/complaints_sentiment.csv')
+    df = pd.read_csv(r'./data/uber_df.csv')
+    df.drop(df.columns[0], axis=1, inplace=True)
+    df.drop(columns=['source_id', 'target_id', 'all_data'], inplace=True)
+    if 'post' in filter_str:
+        return (df[((df['target'] == 'Uber_Support') | (df['target'] == 'UberVirgDetroit') | (
+                    df['target'] == 'Uber_India') | (df['target'] == 'UberEats') | (df['target'] == 'Uber_Kolkata') | (
+                                df['target'] == 'Uber') | (df['target'] == 'UberUKsupport') | (
+                                df['target'] == 'Uber_MEX') | (df['target'] == 'Uber_RSA') | (
+                                df['target'] == 'UberINSupport'))
+                   & (df['created_at'] > str(covid_date))]
+                , complaints_sentiment_df)
+    elif 'pre' in filter_str:
+        return (df[((df['target'] == 'Uber_Support') | (df['target'] == 'UberVirgDetroit') | (
+                    df['target'] == 'Uber_India') | (df['target'] == 'UberEats') | (df['target'] == 'Uber_Kolkata') | (
+                                df['target'] == 'Uber') | (df['target'] == 'UberUKsupport') | (
+                                df['target'] == 'Uber_MEX') | (df['target'] == 'Uber_RSA') | (
+                                df['target'] == 'UberINSupport'))
+                   & (df['created_at'] <= str(covid_date))]
+                , complaints_sentiment_df)
+    else:
+        return (df[((df['target'] == 'Uber_Support') | (df['target'] == 'UberVirgDetroit') | (
+                    df['target'] == 'Uber_India') | (df['target'] == 'UberEats') | (df['target'] == 'Uber_Kolkata') | (
+                                df['target'] == 'Uber') | (df['target'] == 'UberUKsupport') | (
+                                df['target'] == 'Uber_MEX') | (df['target'] == 'Uber_RSA') | (
+                                df['target'] == 'UberINSupport'))]
+                , complaints_sentiment_df)
+
+
+@st.cache(persist=True, allow_output_mutation=True)
+def calculate_sentiment(df):
+    return get_sentiment(df)
+
 
 date = np.datetime64('2020-04-01T01:00:00.000000+0100')
 uber_df = load_data()
 uber_df_f, filter_type = filter_data(uber_df.copy(), timeline, direction, date)
 network_results = load_network_results(filter_type)
+text_df, complaints_sentiment = load_sentiment_results(filter_type, date)
 #######################################################################################################
 
 # COMBINED ANALYSIS
 #######################################################################################################
 st.header('Uber Support Priority Queue')
 st.write('Here we combine sentiment and network models to prioritize posts based off priority.')
-st.write('Ideally be able to filter by time')
 created_at = st.selectbox(
     "Created At",
     (uber_df['created_at'])
@@ -119,6 +154,19 @@ score_type = st.selectbox(
     "Select score type (mean favors sentiment & sum favors network)",
     ("Mean", "Sum")
 )
+
+sentiment_df = calculate_sentiment(text_df)
+
+combined_df = sentiment_df.merge(network_results, on='user')
+if score_type == 'Mean':
+    combined_df['combined_score'] = combined_df['mean_score'] + -1*combined_df['sentiment_score']
+    combined_df.sort_values('combined_score', ascending=False, inplace=True)
+    st.write(combined_df[['user', 'target', 'combined_score', 'mean_score', 'sentiment_score', 'text', 'created_at']])
+if score_type == 'Sum':
+    combined_df['combined_score'] = combined_df['sum_score'] + -1*combined_df['sentiment_score']
+    combined_df.sort_values('combined_score', ascending=False, inplace=True)
+    st.write(combined_df[['user', 'target', 'combined_score', 'sum_score', 'sentiment_score', 'text', 'created_at']])
+
 #######################################################################################################
 
 # NETWORK ANALYSIS
@@ -136,8 +184,13 @@ else:
 # SENTIMENT ANALYSIS
 #######################################################################################################
 st.header('Sentiment Analysis')
-st.write('Sentiment analysis based off categories and interactions.')
+st.subheader('Sentiment Of Interactions')
+st.write(sentiment_df)
+st.subheader('Sentiment Based On Complaints Categories')
+st.write(complaints_sentiment)
 
+st.subheader('Sentiment Based On Response Time')
+st.image('./images/senti_by_response_time.png')
 #######################################################################################################
 
 # TOPIC MODELING

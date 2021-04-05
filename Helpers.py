@@ -10,6 +10,10 @@ import pyLDAvis
 from pyLDAvis import gensim_models
 import numpy as np
 import  matplotlib.pyplot as plt
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from pprint import pprint
+from IPython import display
+from datetime import datetime
 
 
 # TOPIC MODELING
@@ -53,4 +57,25 @@ def lda(df, n_topics=5, lda_str='all'):
     LDAvis_prepared = pyLDAvis.enable_notebook()
     pyLDAvis.save_html(LDAvis_prepared,'./html/{}_lda_n{}.html'.format(lda_str, n_topics))
 #######################################################################################################
+
+# SENTIMENT ANALYSIS
+#######################################################################################################
+def sentiment_analyzer_score(line):
+    analyser = SentimentIntensityAnalyzer()
+    score = analyser.polarity_scores(line)
+    return score['compound']
+
+
+def get_sentiment(df):
+    sentiments_overall = df['text'].tolist()
+    results = []
+    for line in sentiments_overall:
+        sentiment_score = sentiment_analyzer_score(str(line))
+        results.append(sentiment_score)
+    df['sentiment_score'] = results
+    print(df.head())
+    return df
+
+#######################################################################################################
+
 
