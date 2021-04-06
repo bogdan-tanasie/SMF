@@ -27,6 +27,7 @@ timeline = st.sidebar.selectbox(
 )
 
 st.sidebar.subheader('Topic & Sentiment Models')
+
 direction = st.sidebar.selectbox(
     "Select data direction",
     ("All", "To Uber", "From Uber")
@@ -48,6 +49,15 @@ os_type = platform.system()
 def load_data():
     df_initial = pd.read_pickle(r'./data/uber_tk.p')
     return df_initial
+
+@st.cache(persist=True)
+def load_data_Clique():
+    cliques=pd.read_csv("Some_cliques.csv")
+    cliques=cliques.sort_values(by="clique_size",ascending=False)
+    source_cliques=pd.read_csv("mentions_source_cliques.csv")
+    target_cliques=pd.read_csv("mentions_targ_cliques.csv")
+
+    return(cliques,source_cliques,target_cliques)
 
 
 @st.cache(persist=True, allow_output_mutation=True)
@@ -156,6 +166,7 @@ score_type = st.selectbox(
     ("Mean", "Sum")
 )
 
+
 sentiment_df = calculate_sentiment(text_df)
 
 combined_df = sentiment_df.merge(network_results, on='user')
@@ -215,6 +226,16 @@ st.image(wc_image, width=1200)
 #    if e.errno == errno.EPIPE:
 #        print('Waiting on LDA')
 
+# Cliques
+#######################################################################################################
+st.header("Cliques")
+cliques,source_cliques,target_cliques=load_data_Clique()
+st.write(cliques)
+st.header("Source of Cliques")
+st.write(source_cliques)
+st.header("Target of Cliques")
+st.write(target_cliques)
+
 HtmlFile = None
 if os_type == 'Windows':
     HtmlFile = open(cwd + r"\html\{}_lda_n{}.html".format(filter_type, n_topics), encoding='utf-8')
@@ -222,4 +243,5 @@ else:
     HtmlFile = open(cwd + "/html/{}_lda_n{}.html".format(filter_type, n_topics), encoding='utf-8')
 source_code = HtmlFile.read()
 components.html(source_code, width=1200, height=800)
-#######################################################################################################
+
+# #######################################################################################################
