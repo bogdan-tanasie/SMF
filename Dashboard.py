@@ -46,17 +46,18 @@ os_type = platform.system()
 
 @st.cache(persist=True)
 def load_data():
-    df_comm = pd.read_csv(r'./Communities.csv')
+
     df_initial = pd.read_pickle(r'./data/uber_tk.p')
-    return df_initial, df_comm
+    return df_initial
 
 @st.cache(persist=True)
 def load_data_Clique():
+    df_comm = pd.read_csv(r'./Communities.csv')
     cliques = pd.read_csv("Some_cliques.csv")
     cliques = cliques.sort_values(by="clique_size",ascending=False)
     source_cliques = pd.read_csv("mentions_source_cliques.csv")
     target_cliques = pd.read_csv("mentions_targ_cliques.csv")
-
+    return cliques, source_cliques, target_cliques, df_comm
 
 @st.cache(persist=True, allow_output_mutation=True)
 def filter_data(df, t, d, covid_date):
@@ -145,10 +146,11 @@ def calculate_sentiment(df):
 
 
 date = np.datetime64('2020-04-01T01:00:00.000000+0100')
-uber_df, communities_df = load_data()
+uber_df = load_data()
 uber_df_f, filter_type = filter_data(uber_df.copy(), timeline, direction, date)
 network_results = load_network_results(filter_type)
 text_df, complaints_sentiment = load_sentiment_results(filter_type, date)
+cliques, source_cliques, target_cliques, communities_df = load_data_Clique()
 #######################################################################################################
 
 # COMBINED ANALYSIS
@@ -189,12 +191,19 @@ if score_type == 'Sum':
 
 # CLIQUES
 #######################################################################################################
-expander_community = st.beta_expander('Community Detection')
-communities = list(communities_df.groupby('group')['id'].agg(lambda x: ','.join(x)))
+expander_cliques = st.beta_expander('Cliques Detection')
+communities = list(communities_df.groupby('group')['id'].agg(lambda x: ', '.join(x)))
 for i in range(len(communities)):
-    user_str = communities[i]
-    expander_community.markdown('(Group {}'.format(i + 1))
-    expander_community.write(user_str)
+    str_comm = communities[i]
+    if len(str_comm.split(',')) > 1:
+        expander_cliques.text('Group {}'.format(i+1))
+        expander_cliques.text(str_comm)
+expander_cliques.subheader("Cliques")
+expander_cliques.write(cliques[['source', 'target', 'text', 'clique', 'clique_size']])
+expander_cliques.subheader("Source of Cliques")
+expander_cliques.write(source_cliques[['Source', 'Counts']])
+expander_cliques.subheader("Target of Cliques")
+expander_cliques.write(target_cliques[['Target', 'Counts']])
 #######################################################################################################
 
 # NETWORK ANALYSIS
@@ -244,13 +253,3 @@ expander_topics.lda_html
 #######################################################################################################
 
 
-# Cliques
-#######################################################################################################
-st.header("Cliques")
-cliques,source_cliques,target_cliques=load_data_Clique()
-st.write(cliques)
-st.header("Source of Cliques")
-st.write(source_cliques)
-st.header("Target of Cliques")
-st.write(target_cliques)
-#######################################################################################################
