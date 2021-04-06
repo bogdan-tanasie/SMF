@@ -4,9 +4,13 @@ import pandas as pd
 import numpy as np
 import os
 import errno
+import subprocess
 import platform
 from Helpers import word_cloud, lda, get_sentiment
 from sklearn.preprocessing import MaxAbsScaler
+
+# Copy configurations to web app
+subprocess.run(["cp", "config.toml", "~/.streamlit/config.toml"])
 
 st.set_page_config(layout="wide")
 st.title('Twitter Complaints Analysis')
