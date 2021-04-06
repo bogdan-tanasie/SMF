@@ -4,9 +4,14 @@ import pandas as pd
 import numpy as np
 import os
 import errno
+import subprocess
 import platform
 from Helpers import word_cloud, lda, get_sentiment
 from sklearn.preprocessing import MaxAbsScaler
+
+# Copy configurations to web app
+# subprocess.run(["mkdir", "-p", "~/.streamlit"])
+# subprocess.run(["cp", "config.toml", "~/.streamlit/config.toml"])
 
 st.set_page_config(layout="wide")
 st.title('Twitter Complaints Analysis')
@@ -44,13 +49,13 @@ cwd = os.getcwd()
 os_type = platform.system()
 
 
-@st.cache(persist=True)
+@st.cache(persist=True, allow_output_mutation=True)
 def load_data():
 
     df_initial = pd.read_pickle(r'./data/uber_tk.p')
     return df_initial
 
-@st.cache(persist=True)
+@st.cache(persist=True, allow_output_mutation=True)
 def load_data_Clique():
     df_comm = pd.read_csv(r'./Communities.csv')
     cliques = pd.read_csv("Some_cliques.csv")
@@ -100,7 +105,7 @@ def filter_data(df, t, d, covid_date):
         return df, filter_str
 
 
-@st.cache(persist=True)
+@st.cache(persist=True, allow_output_mutation=True)
 def load_network_results(filter_str):
     if 'post' in filter_str:
         return pd.read_csv(r'./data/post_network_results.csv')
@@ -109,7 +114,7 @@ def load_network_results(filter_str):
     else:
         return pd.read_csv(r'./data/all_network_results.csv')
 
-@st.cache(persist=True)
+@st.cache(persist=True, allow_output_mutation=True)
 def load_sentiment_results(filter_str, covid_date):
     complaints_sentiment_df = pd.read_csv(r'./data/complaints_sentiment.csv')
     df = pd.read_csv(r'./data/uber_df.csv')
@@ -156,8 +161,8 @@ cliques, source_cliques, target_cliques, communities_df = load_data_Clique()
 # COMBINED ANALYSIS
 #######################################################################################################
 st.header('Uber Support Priority Queue')
-st.write('Here we combine sentiment and network models to prioritize posts based off priority.')
-use_time = st.checkbox('Filter By Date')
+st.write('Here we combine sentiment and network models to prioritize Tweets.')
+use_time = st.checkbox('Filter By Date & Time')
 if use_time:
     created_at = st.selectbox(
         "Earliest date",
@@ -171,11 +176,15 @@ score_type = st.selectbox(
 sentiment_df = calculate_sentiment(text_df)
 
 combined_df = sentiment_df.merge(network_results, on='user')
+combined_df = (combined_df[((combined_df['user'] != 'Uber_Support') & (combined_df['user'] != 'UberVirgDetroit') & (combined_df['user'] != 'Uber_India')
+                       & (combined_df['user'] != 'UberEats') & (combined_df['user'] != 'Uber_Kolkata') & (combined_df['user'] != 'Uber') & (combined_df['user'] != 'UberUKsupport')
+                       & (combined_df['user'] != 'Uber_MEX') & (combined_df['user'] != 'Uber_RSA') & (combined_df['user'] != 'UberINSupport'))])
+combined_df_2 = combined_df.copy()
 scale = MaxAbsScaler()
 if score_type == 'Mean':
     scores = [combined_df['mean_score'], -1*combined_df['sentiment_score']]
     scores_std = scale.fit_transform(scores)
-    combined_df['combined_score'] = (scores_std[0] + scores[1])/2
+    combined_df['combined_score'] = (scores_std[0] + scores_std[1])/2
     combined_df['mean_score_std'] = scores_std[0]
     combined_df['sentiment_score_std'] = scores_std[1]
     combined_df.sort_values('combined_score', ascending=False, inplace=True)
@@ -185,24 +194,24 @@ if score_type == 'Mean':
     else:
         st.write(combined_df_selection)
 if score_type == 'Sum':
-    scores = [combined_df['sum_score'], -1 * combined_df['sentiment_score']]
-    scores_std = scale.fit_transform(scores)
-    combined_df['combined_score'] = scores_std[0] + scores[1]
-    combined_df['sum_score_std'] = scores_std[0]
-    combined_df['sentiment_score_std'] = scores_std[1]
-    combined_df.sort_values('combined_score', ascending=False, inplace=True)
-    combined_df_selection = combined_df[['user', 'target', 'combined_score', 'sum_score_std', 'sentiment_score_std', 'sum_score', 'sentiment_score', 'text', 'created_at']]
+    scores_2 = [combined_df_2['sum_score'], -1*combined_df_2['sentiment_score']]
+    scores_2_std = scale.fit_transform(scores_2)
+    combined_df_2['combined_score'] = scores_2_std[0] + scores_2_std[1]
+    combined_df_2['sum_score_std'] = scores_2_std[0]
+    combined_df_2['sentiment_score_std'] = scores_2_std[1]
+    combined_df_2.sort_values('combined_score', ascending=False, inplace=True)
+    combined_df_2_selection = combined_df_2[['user', 'target', 'combined_score', 'sum_score_std', 'sentiment_score_std', 'sum_score', 'sentiment_score', 'text', 'created_at']]
     if use_time:
-        st.write(combined_df_selection[combined_df_selection['created_at'] >= str(created_at)])
+        st.write(combined_df_2_selection[combined_df_2_selection['created_at'] >= str(created_at)])
     else:
-        st.write(combined_df_selection)
+        st.write(combined_df_2_selection)
 
 #######################################################################################################
 
 # CLIQUES
 #######################################################################################################
 expander_cliques = st.beta_expander('Cliques Detection')
-communities = list(communities_df.groupby('group')['id'].agg(lambda x: ', '.join(x)))
+communities = list(communities_df.groupby('group')['source'].agg(lambda x: ', '.join(x)))
 for i in range(len(communities)):
     str_comm = communities[i]
     if len(str_comm.split(',')) > 1:
