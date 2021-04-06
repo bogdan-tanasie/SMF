@@ -44,13 +44,13 @@ cwd = os.getcwd()
 os_type = platform.system()
 
 
-@st.cache(persist=True)
+@st.cache(persist=True, allow_output_mutation=True)
 def load_data():
 
     df_initial = pd.read_pickle(r'./data/uber_tk.p')
     return df_initial
 
-@st.cache(persist=True)
+@st.cache(persist=True, allow_output_mutation=True)
 def load_data_Clique():
     df_comm = pd.read_csv(r'./Communities.csv')
     cliques = pd.read_csv("Some_cliques.csv")
@@ -100,7 +100,7 @@ def filter_data(df, t, d, covid_date):
         return df, filter_str
 
 
-@st.cache(persist=True)
+@st.cache(persist=True, allow_output_mutation=True)
 def load_network_results(filter_str):
     if 'post' in filter_str:
         return pd.read_csv(r'./data/post_network_results.csv')
@@ -109,7 +109,7 @@ def load_network_results(filter_str):
     else:
         return pd.read_csv(r'./data/all_network_results.csv')
 
-@st.cache(persist=True)
+@st.cache(persist=True, allow_output_mutation=True)
 def load_sentiment_results(filter_str, covid_date):
     complaints_sentiment_df = pd.read_csv(r'./data/complaints_sentiment.csv')
     df = pd.read_csv(r'./data/uber_df.csv')
