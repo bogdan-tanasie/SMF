@@ -46,8 +46,16 @@ os_type = platform.system()
 
 @st.cache(persist=True)
 def load_data():
+    df_comm = pd.read_csv(r'./Communities.csv')
     df_initial = pd.read_pickle(r'./data/uber_tk.p')
-    return df_initial
+    return df_initial, df_comm
+
+@st.cache(persist=True)
+def load_data_Clique():
+    cliques = pd.read_csv("Some_cliques.csv")
+    cliques = cliques.sort_values(by="clique_size",ascending=False)
+    source_cliques = pd.read_csv("mentions_source_cliques.csv")
+    target_cliques = pd.read_csv("mentions_targ_cliques.csv")
 
 
 @st.cache(persist=True, allow_output_mutation=True)
@@ -137,7 +145,7 @@ def calculate_sentiment(df):
 
 
 date = np.datetime64('2020-04-01T01:00:00.000000+0100')
-uber_df = load_data()
+uber_df, communities_df = load_data()
 uber_df_f, filter_type = filter_data(uber_df.copy(), timeline, direction, date)
 network_results = load_network_results(filter_type)
 text_df, complaints_sentiment = load_sentiment_results(filter_type, date)
@@ -179,35 +187,45 @@ if score_type == 'Sum':
 
 #######################################################################################################
 
+# CLIQUES
+#######################################################################################################
+expander_community = st.beta_expander('Community Detection')
+communities = list(communities_df.groupby('group')['id'].agg(lambda x: ','.join(x)))
+for i in range(len(communities)):
+    user_str = communities[i]
+    expander_community.markdown('(Group {}'.format(i + 1))
+    expander_community.write(user_str)
+#######################################################################################################
+
 # NETWORK ANALYSIS
 #######################################################################################################
-st.header('Network Analysis')
-st.write(network_results.head(50))
+expander_network = st.beta_expander('Network Analysis')
+expander_network.write(network_results.head(50))
 if 'post' in filter_type:
-    st.image('./images/post_graph.png')
+    expander_network.image('./images/post_graph.png')
 elif 'pre' in filter_type:
-    st.image('./images/pre_graph.png')
+    expander_network.image('./images/pre_graph.png')
 else:
-    st.image('./images/all_graph.png')
+    expander_network.image('./images/all_graph.png')
 #######################################################################################################
 
 # SENTIMENT ANALYSIS
 #######################################################################################################
-st.header('Sentiment Analysis')
-st.subheader('Sentiment Of Interactions')
-st.write(sentiment_df)
-st.subheader('Sentiment Based On Complaints Categories')
-st.write(complaints_sentiment)
+expander_sentiment = st.beta_expander('Sentiment Analysis')
+expander_sentiment.subheader('Sentiment Of Interactions')
+expander_sentiment.write(sentiment_df)
+expander_sentiment.subheader('Sentiment Based On Complaints Categories')
+expander_sentiment.write(complaints_sentiment)
 
-st.subheader('Negative Sentiment Based On Conversation Length')
-st.image('./images/senti_by_response_time.png')
+expander_sentiment.subheader('Negative Sentiment Based On Conversation Length')
+expander_sentiment.image('./images/senti_by_response_time.png')
 #######################################################################################################
 
 # TOPIC MODELING
 #######################################################################################################
-st.header('Topic Modeling Analysis')
+expander_topics = st.beta_expander('Topic Modeling Analysis')
 wc_image = word_cloud(uber_df_f)
-st.image(wc_image, width=1200)
+expander_topics.image(wc_image, width=1200)
 
 # try:
 #  lda(uber_df_f, n_topics, filter_type)
@@ -221,5 +239,18 @@ if os_type == 'Windows':
 else:
     HtmlFile = open(cwd + "/html/{}_lda_n{}.html".format(filter_type, n_topics), encoding='utf-8')
 source_code = HtmlFile.read()
-components.html(source_code, width=1200, height=800)
+lda_html = components.html(source_code, width=1200, height=800)
+expander_topics.lda_html
+#######################################################################################################
+
+
+# Cliques
+#######################################################################################################
+st.header("Cliques")
+cliques,source_cliques,target_cliques=load_data_Clique()
+st.write(cliques)
+st.header("Source of Cliques")
+st.write(source_cliques)
+st.header("Target of Cliques")
+st.write(target_cliques)
 #######################################################################################################
